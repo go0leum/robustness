@@ -108,13 +108,13 @@ class DistortImageFolder(data.Dataset):
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        save_path = '/share/data/vision-greg/DistortedImageNet/JPEG/' + self.method.__name__ + \
+        save_path = './DistortedImageNet_bus/' + self.method.__name__ + \
                     '/' + str(self.severity) + '/' + self.idx_to_class[target]
 
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
-        save_path += path[path.rindex('/'):]
+        save_path += path[path.rindex('\\'):]
 
         Image.fromarray(np.uint8(img)).save(save_path, quality=85, optimize=True)
 
@@ -289,7 +289,7 @@ def fgsm(x, source_net, severity=1):
 def gaussian_blur(x, severity=1):
     c = [1, 2, 3, 4, 6][severity - 1]
 
-    x = gaussian(np.array(x) / 255., sigma=c, multichannel=True)
+    x = gaussian(np.array(x) / 255., sigma=c)
     return np.clip(x, 0, 1) * 255
 
 
@@ -297,7 +297,7 @@ def glass_blur(x, severity=1):
     # sigma, max_delta, iterations
     c = [(0.7, 1, 2), (0.9, 2, 1), (1, 2, 3), (1.1, 3, 2), (1.5, 4, 2)][severity - 1]
 
-    x = np.uint8(gaussian(np.array(x) / 255., sigma=c[0], multichannel=True) * 255)
+    x = np.uint8(gaussian(np.array(x) / 255., sigma=c[0]) * 255)
 
     # locally shuffle pixels
     for i in range(c[2]):
@@ -308,7 +308,7 @@ def glass_blur(x, severity=1):
                 # swap
                 x[h, w], x[h_prime, w_prime] = x[h_prime, w_prime], x[h, w]
 
-    return np.clip(gaussian(x / 255., sigma=c[0], multichannel=True), 0, 1) * 255
+    return np.clip(gaussian(x / 255., sigma=c[0]), 0, 1) * 255
 
 
 def defocus_blur(x, severity=1):
@@ -578,9 +578,11 @@ def save_distorted(method=gaussian_noise):
     for severity in range(1, 6):
         print(method.__name__, severity)
         distorted_dataset = DistortImageFolder(
-            root="/share/data/vision-greg/ImageNet/clsloc/images/val",
+            root="D:\\bus\\datasets\\240426_Google+Naver_버스 카드 단말기",
             method=method, severity=severity,
-            transform=trn.Compose([trn.Resize(256), trn.CenterCrop(224)]))
+            transform=trn.Resize(224)
+            #transform=trn.Compose([trn.Resize(256), trn.CenterCrop(224)])
+            )
         distorted_dataset_loader = torch.utils.data.DataLoader(
             distorted_dataset, batch_size=100, shuffle=False, num_workers=4)
 
@@ -593,29 +595,31 @@ def save_distorted(method=gaussian_noise):
 # /////////////// Display Results ///////////////
 import collections
 
-print('\nUsing ImageNet data')
+if __name__=='__main__':
 
-d = collections.OrderedDict()
-d['Gaussian Noise'] = gaussian_noise
-d['Shot Noise'] = shot_noise
-d['Impulse Noise'] = impulse_noise
-d['Defocus Blur'] = defocus_blur
-d['Glass Blur'] = glass_blur
-d['Motion Blur'] = motion_blur
-d['Zoom Blur'] = zoom_blur
-d['Snow'] = snow
-d['Frost'] = frost
-d['Fog'] = fog
-d['Brightness'] = brightness
-d['Contrast'] = contrast
-d['Elastic'] = elastic_transform
-d['Pixelate'] = pixelate
-d['JPEG'] = jpeg_compression
+    print('\nUsing ImageNet data')
 
-d['Speckle Noise'] = speckle_noise
-d['Gaussian Blur'] = gaussian_blur
-d['Spatter'] = spatter
-d['Saturate'] = saturate
+    d = collections.OrderedDict()
+    d['Gaussian Noise'] = gaussian_noise
+    # d['Shot Noise'] = shot_noise
+    # d['Impulse Noise'] = impulse_noise
+    # d['Defocus Blur'] = defocus_blur
+    # d['Glass Blur'] = glass_blur
+    d['Motion Blur'] = motion_blur
+    # d['Zoom Blur'] = zoom_blur
+    # d['Snow'] = snow
+    # d['Frost'] = frost
+    d['Fog'] = fog
+    d['Brightness'] = brightness
+    d['Contrast'] = contrast
+    # d['Elastic'] = elastic_transform
+    # d['Pixelate'] = pixelate
+    # d['JPEG'] = jpeg_compression
 
-for method_name in d.keys():
-    save_distorted(d[method_name])
+    # d['Speckle Noise'] = speckle_noise
+    # d['Gaussian Blur'] = gaussian_blur
+    # d['Spatter'] = spatter
+    # d['Saturate'] = saturate
+
+    for method_name in d.keys():
+        save_distorted(d[method_name])
